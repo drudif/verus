@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { content } from "@/content";
 
 const stroke = {
   fill: "none",
@@ -10,56 +11,36 @@ const stroke = {
   strokeLinejoin: "round" as const,
 };
 
-const AIS = [
-  {
-    name: "Ada",
-    role: "Investimento em mídia",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-        <polyline points="2,18 8,12 13,16 22,6" />
-        <polyline points="17,6 22,6 22,11" />
-      </svg>
-    ),
-  },
-  {
-    name: "Parisa",
-    role: "Efetividade criativa",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-  {
-    name: "Grace",
-    role: "Comportamento de audiência",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      </svg>
-    ),
-  },
-  {
-    name: "Radia",
-    role: "Previsão de performance",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-      </svg>
-    ),
-  },
+// Ícones por analista (na mesma ordem de content.console.analistas)
+const ICONS = [
+  (
+    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
+      <polyline points="2,18 8,12 13,16 22,6" />
+      <polyline points="17,6 22,6 22,11" />
+    </svg>
+  ),
+  (
+    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  (
+    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    </svg>
+  ),
+  (
+    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  ),
 ];
 
-// Perguntas direcionadas a cada analista (índice casa com AIS).
-const QUESTIONS = [
-  "Onde estou desperdiçando budget de mídia agora?",
-  "Qual criativo está puxando mais conversão esta semana?",
-  "Quais segmentos de audiência têm maior risco de churn?",
-  "Qual a projeção de performance da campanha no próximo mês?",
-];
+const AIS = content.console.analistas;
+const QUESTIONS = content.console.perguntas;
 
 export default function AiConsole({ className = "" }: { className?: string }) {
   const [text, setText] = useState("");
@@ -160,7 +141,7 @@ export default function AiConsole({ className = "" }: { className?: string }) {
   return (
     <div ref={containerRef} className={`glass relative p-7 ${className}`}>
       <div className="flex items-center justify-between">
-        <span className="eyebrow">Os quatro analistas</span>
+        <span className="eyebrow">{content.console.eyebrow}</span>
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-magenta opacity-60" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-magenta" />
@@ -172,7 +153,7 @@ export default function AiConsole({ className = "" }: { className?: string }) {
           const lit = active === i;
           return (
             <li
-              key={ai.name}
+              key={ai.nome}
               ref={(el) => {
                 aiRefs.current[i] = el;
               }}
@@ -187,14 +168,14 @@ export default function AiConsole({ className = "" }: { className?: string }) {
                     : "bg-magenta/12 text-magenta"
                 }`}
               >
-                {ai.icon}
+                {ICONS[i]}
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-bold leading-tight text-cloud">
-                  {ai.name}
+                  {ai.nome}
                 </p>
                 <p className="truncate font-mono text-[11px] text-cloud-muted">
-                  {ai.role}
+                  {ai.papel}
                 </p>
               </div>
             </li>
@@ -213,7 +194,7 @@ export default function AiConsole({ className = "" }: { className?: string }) {
         }`}
       >
         <p className="font-mono text-[10px] uppercase tracking-wider text-magenta-bright">
-          Pergunta em linguagem natural
+          {content.console.label}
         </p>
         <p
           aria-live="polite"

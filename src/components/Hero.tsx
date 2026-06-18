@@ -1,5 +1,9 @@
 import Reveal from "./Reveal";
+import Highlight from "./Highlight";
 import AiConsole from "./AiConsole";
+import { content } from "@/content";
+
+const h = content.hero;
 
 export default function Hero() {
   return (
@@ -10,7 +14,7 @@ export default function Hero() {
           <Reveal>
             <span className="eyebrow mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-magenta" />
-              Apresentado no Google Event
+              {h.eyebrow}
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -19,26 +23,23 @@ export default function Hero() {
               className="h-auto w-full max-w-[500px]"
             />
             <h1 className="mt-7 text-balance font-display text-[clamp(1.9rem,4.6vw,3.05rem)] font-bold leading-[1.08] tracking-[-0.02em]">
-              Inteligência de dados e IA conversacional para decisões de
-              marketing <span className="text-gradient">mais assertivas.</span>
+              <Highlight text={h.titulo} mark={h.destaque} />
             </h1>
             <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-cloud-muted">
-              A Convert apresentou o Verus como case no evento do Google. A
-              plataforma conecta dados, mídia e IA para transformar performance
-              em decisão.
+              {h.paragrafo}
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a href="#lead-form" className="btn-primary">
-                Quero saber mais sobre o Verus
+                {h.ctaPrimario}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </a>
-              <a href="#arquitetura" className="btn-ghost">Como funciona</a>
+              <a href="#arquitetura" className="btn-ghost">
+                {h.ctaSecundario}
+              </a>
             </div>
-            <p className="mt-6 text-xs text-cloud-faint">
-              Conversa consultiva · demonstração sob medida · sem compromisso.
-            </p>
+            <p className="mt-6 text-xs text-cloud-faint">{h.fineprint}</p>
           </Reveal>
 
           {/* card — console dos quatro analistas com pergunta → IA */}

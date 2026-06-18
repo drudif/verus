@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { content } from "@/content";
 
-const links = [
-  { label: "Por quê", href: "#por-que" },
-  { label: "Arquitetura", href: "#arquitetura" },
-  { label: "Para quem", href: "#para-quem" },
-];
+const { links, cta } = content.nav;
 
 /**
  * Nav fixa com estado "scrolled" (ganha fundo + hairline ao rolar) e CTA
@@ -49,7 +46,7 @@ export default function SiteNav() {
         </nav>
 
         <a href="#lead-form" className="btn-primary !px-5 !py-2.5 !text-xs">
-          Quero saber mais
+          {cta}
         </a>
       </div>
     </header>

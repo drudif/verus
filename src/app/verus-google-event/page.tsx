@@ -1,11 +1,15 @@
 import Hero from "@/components/Hero";
 import SiteNav from "@/components/SiteNav";
 import Reveal from "@/components/Reveal";
+import Highlight from "@/components/Highlight";
 import ValueSection from "@/components/ValueSection";
 import ArchitectureSection from "@/components/ArchitectureSection";
 import AudienceSection from "@/components/AudienceSection";
 import HubSpotForm from "@/components/HubSpotForm";
 import Footer from "@/components/Footer";
+import { content } from "@/content";
+
+const f = content.formulario;
 
 export default function VerusGoogleEventPage() {
   return (
@@ -34,15 +38,13 @@ export default function VerusGoogleEventPage() {
               <div className="lg:sticky lg:top-24 lg:self-start">
                 <span className="eyebrow">
                   <span className="h-1.5 w-1.5 rounded-full bg-magenta" />
-                  Falar com a Convert
+                  {f.eyebrow}
                 </span>
                 <h2 className="mt-4 text-balance font-display text-[clamp(1.85rem,4vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em]">
-                  Quer entender como o Verus pode se aplicar à{" "}
-                  <span className="text-gradient">sua operação?</span>
+                  <Highlight text={f.titulo} mark={f.destaque} />
                 </h2>
                 <p className="mt-5 max-w-md text-base leading-relaxed text-cloud-muted">
-                  Preencha o formulário e o time da Convert entra em contato para
-                  conversar sobre aplicação, demonstração e próximos passos.
+                  {f.paragrafo}
                 </p>
               </div>
 

@@ -1,8 +1,6 @@
-const links = [
-  { label: "Site da Convert", href: "https://convert.com.br" },
-  { label: "Política de Privacidade", href: "https://convert.com.br/politica-de-privacidade" },
-  { label: "Contato", href: "#lead-form" },
-];
+import { content } from "@/content";
+
+const { descricao, links, copy } = content.footer;
 
 export default function Footer() {
   return (
@@ -12,8 +10,7 @@ export default function Footer() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/convert-logo.svg" alt="Convert" className="h-6 w-auto" />
           <p className="mt-3 text-sm leading-relaxed text-cloud-muted">
-            Verus é uma plataforma de inteligência de dados e IA conversacional da
-            Convert.
+            {descricao}
           </p>
         </div>
 
@@ -30,7 +27,7 @@ export default function Footer() {
             </a>
           ))}
           <p className="mt-2 font-mono text-[11px] uppercase tracking-widest text-cloud-faint">
-            © 2026 Convert · Human Digital Business
+            {copy}
           </p>
         </nav>
       </div>
