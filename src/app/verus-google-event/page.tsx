@@ -1,4 +1,5 @@
 import Hero from "@/components/Hero";
+import MeshMarkers from "@/components/MeshMarkers";
 import SiteNav from "@/components/SiteNav";
 import Reveal from "@/components/Reveal";
 import Highlight from "@/components/Highlight";
@@ -22,6 +23,7 @@ export default function VerusGoogleEventPage() {
         tabIndex={-1}
         className="mesh-frame"
       />
+      <MeshMarkers />
 
       <SiteNav />
 
