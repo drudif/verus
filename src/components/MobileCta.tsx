@@ -38,7 +38,7 @@ export default function MobileCta({ label }: { label: string }) {
           : "translate-y-0 opacity-100"
       }`}
     >
-      <div className="mx-auto w-full max-w-[460px] px-5 py-3">
+      <div className="mx-auto w-full max-w-[460px] px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <a href="#lead-form" className="btn-primary w-full">
           {label}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>

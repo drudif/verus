@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Reveal from "@/components/Reveal";
 import Highlight from "@/components/Highlight";
 import HubSpotForm from "@/components/HubSpotForm";
@@ -7,6 +7,13 @@ import { content } from "@/content";
 
 export const metadata: Metadata = {
   title: "Verus | Case Google Event | Convert",
+};
+
+// edge-to-edge: deixa o header cobrir a área do notch/status bar
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const COL = "mx-auto w-full max-w-[460px] px-5";
@@ -27,15 +34,15 @@ export default function MobilePage() {
         className="mesh-frame"
       />
 
-      {/* header fixo: logo Convert (opaco — não deixa o conteúdo vazar por trás) */}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#04141a]">
+      {/* header fixo: cobre o safe-area do topo (notch/status bar) */}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#04141a]/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className={`${COL} flex h-14 items-center justify-center`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/convert-logo.svg" alt="Convert" className="h-6 w-auto" />
         </div>
       </header>
 
-      <main className="pb-28 pt-20">
+      <main className="pb-28 pt-[calc(5rem+env(safe-area-inset-top))]">
         {/* HERO */}
         <section className={COL}>
           <Reveal>
@@ -64,7 +71,7 @@ export default function MobilePage() {
               </span>
               <h2 className={H2}>
                 <Highlight
-                  text={c.arquitetura.titulo}
+                  text="Graças a uma camada semântica proprietária, o Verus conecta:"
                   mark={c.arquitetura.destaque}
                 />
               </h2>
