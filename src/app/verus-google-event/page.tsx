@@ -1,5 +1,4 @@
 import Hero from "@/components/Hero";
-import MeshMarkers from "@/components/MeshMarkers";
 import SiteNav from "@/components/SiteNav";
 import Reveal from "@/components/Reveal";
 import Highlight from "@/components/Highlight";
@@ -15,15 +14,15 @@ const f = content.formulario;
 export default function VerusGoogleEventPage() {
   return (
     <>
-      {/* Fundo mesh animado (brand-tuned) — camada fixa atrás de todo o conteúdo */}
+      {/* Fundo mesh animado (brand-tuned) — camada fixa atrás de todo o conteúdo.
+          ?v= força o navegador a buscar a versão atual (evita iframe em cache). */}
       <iframe
-        src="/mesh-bg.html"
+        src="/mesh-bg.html?v=6"
         title=""
         aria-hidden="true"
         tabIndex={-1}
         className="mesh-frame"
       />
-      <MeshMarkers />
 
       <SiteNav />
 

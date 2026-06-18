@@ -440,7 +440,10 @@
     function secVisible(el, H) {
       if (!el) return false;
       var r = el.getBoundingClientRect();
-      return r.top < H * 0.75 && r.bottom > H * 0.25; // ocupando boa parte da tela
+      // ativo só quando a seção COBRE a faixa central (40%–60%) da viewport.
+      // Robusto para qualquer viewport até ~1750px de altura: o hero (no topo)
+      // não dispara a seção 2, e a seção 2 (curta no desktop) ainda ativa.
+      return r.top < H * 0.4 && r.bottom > H * 0.6;
     }
     function pageGate() {                 // ativo na seção 2 OU na última
       try {
