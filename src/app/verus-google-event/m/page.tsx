@@ -20,15 +20,15 @@ export default function MobilePage() {
     <>
       {/* fundo mesh SEM marcadores (markers=0) — só as curvas de contorno */}
       <iframe
-        src="/mesh-bg.html?v=9&markers=0&perf=low&lineop=0.7"
+        src="/mesh-bg.html?v=9&markers=0&perf=low&lineop=0.5"
         title=""
         aria-hidden="true"
         tabIndex={-1}
         className="mesh-frame"
       />
 
-      {/* header fixo: logo Convert */}
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#04141a]/85 backdrop-blur-md">
+      {/* header fixo: logo Convert (opaco — não deixa o conteúdo vazar por trás) */}
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#04141a]">
         <div className={`${COL} flex h-14 items-center justify-center`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/convert-logo.svg" alt="Convert" className="h-6 w-auto" />
@@ -39,10 +39,6 @@ export default function MobilePage() {
         {/* HERO */}
         <section className={COL}>
           <Reveal>
-            <span className="eyebrow mb-5">
-              <span className={EYE} />
-              {c.hero.eyebrow}
-            </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/verus-logo.png"
