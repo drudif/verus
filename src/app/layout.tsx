@@ -73,7 +73,6 @@ export const viewport: Viewport = {
   themeColor: "#04141A",
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
 };
 
 function safeOrigin(url: string): string {
