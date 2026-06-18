@@ -73,27 +73,27 @@ export const content = {
     eyebrow: "O que o Verus conecta?",
     titulo:
       "Graças a uma camada semântica proprietária, que dá significado e relação entre as métricas, o Verus conecta: ",
-    destaque: "Camada semântica proprietária",
+    destaque: "camada semântica proprietária",
     blocos: [
       {
         step: "01",
-        titulo: "Dados de mídia e performance",
-        desc: "Investimento, entregas e resultados de cada canal, normalizados em um modelo comum.",
+        titulo: "Dados de performance",
+        desc: "REVER TEXTO: Investimento, entregas e resultados de cada canal, normalizados em um modelo comum.",
       },
       {
         step: "02",
-        titulo: "Indicadores de negócio",
-        desc: "Receita, pipeline, CAC, LTV e metas conectados ao contexto de marketing.",
+        titulo: "Investimento em mídia",
+        desc: "REVER TEXTO: Receita, pipeline, CAC, LTV e metas conectados ao contexto de marketing.",
       },
       {
         step: "03",
-        titulo: "Camada semântica proprietária",
-        desc: "O dicionário que dá significado, governança e relação entre as métricas.",
+        titulo: "Eficiência criativa",
+        desc: "REVER TEXTO: O dicionário que dá significado, governança e relação entre as métricas.",
       },
       {
         step: "04",
-        titulo: "Agentes de IA conversacionais",
-        desc: "Perguntas em linguagem natural com respostas contextualizadas e acionáveis.",
+        titulo: "Comportamento da audiência",
+        desc: "REVER TEXTO: Pergunta em linguagem natural com respostas contextualizadas e acionáveis.",
       },
     ],
     tagNucleo: "Núcleo proprietário",
@@ -134,8 +134,8 @@ export const content = {
   /* Bloco de texto ao lado do formulário */
   formulario: {
     eyebrow: "Falar com a Convert",
-    titulo: "Quer entender como o Verus pode se aplicar à sua operação?",
-    destaque: "sua operação?",
+    titulo: "Quer entender como o Verus melhora a sua operação?",
+    destaque: "melhora a sua operação?",
     paragrafo:
       "Preencha o formulário e o time da Convert entra em contato para conversar sobre aplicação, demonstração e próximos passos.",
   },

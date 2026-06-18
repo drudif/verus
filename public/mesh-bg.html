@@ -394,14 +394,14 @@
     }
 
     // Nasce: escolhe uma linha (nível) que realmente exista na faixa esquerda.
-    function spawn(mk, d, occ, minGX, minGY, yMin, yMax) {
+    function spawn(mk, d, occ, minGX, minGY, yMin, yMax, smin, smax) {
       for (var k = 0; k < 28; k++) {
         var lb = Math.random();
         var target = d.hMin + d.span * ((((lb + d.flow) % 1) + 1) % 1);
-        var pc = rr(SPAWN_MIN, SPAWN_MAX), pr = rr(yMin, yMax);
-        var spawnSpan = Math.max(4, Math.round(0.05 * (d.cols - 1))); // confina ao CENTRO
+        var pc = rr(smin, smax), pr = rr(yMin, yMax);
+        var spawnSpan = Math.max(4, Math.round(0.05 * (d.cols - 1))); // confina à faixa
         var p = findOnLevel(d, target, pc, pr, spawnSpan, d.rows);
-        if (!p || p.colN > SPAWN_MAX + 0.02) continue;   // nunca à direita do centro
+        if (!p || p.colN > smax + 0.02) continue;        // não passa do limite direito da faixa
         if (p.rowN < yMin || p.rowN > yMax) continue;    // área visível (margem 150px)
         var ok = true;                                    // espaçamento mín. 15px em X e Y
         for (var oi = 0; oi < occ.length; oi++) {
@@ -425,22 +425,28 @@
 
     // ---- visibilidade por SEÇÃO (lê a página pai; iframe é same-origin) ----
     // O conjunto só aparece nas seções INTERMEDIÁRIAS: some na 1ª (hero) e na última.
-    var _secEl = null;
+    var _sec1 = null, _sec2 = null;
     function pageWin() {
       try { return (window.parent && window.parent !== window) ? window.parent : window; }
       catch (e) { return window; }
     }
     function refreshEls(w) {
-      try { _secEl = w.document.querySelector('#por-que'); } // seção "Por que o Verus existe"
-      catch (e) { _secEl = null; }
+      try {
+        var pdoc = w.document;
+        _sec1 = pdoc.querySelector('#por-que');   // seção 2 ("Por que o Verus existe")
+        _sec2 = pdoc.querySelector('#lead-form'); // última seção (formulário)
+      } catch (e) { _sec1 = _sec2 = null; }
     }
-    function pageGate() {                 // 1 = seção "Por que o Verus existe" visível na tela
+    function secVisible(el, H) {
+      if (!el) return false;
+      var r = el.getBoundingClientRect();
+      return r.top < H * 0.75 && r.bottom > H * 0.25; // ocupando boa parte da tela
+    }
+    function pageGate() {                 // ativo na seção 2 OU na última
       try {
         var w = pageWin(), H = w.innerHeight || 1;
-        if (!_secEl || !_secEl.isConnected) refreshEls(w);
-        if (!_secEl) return 0;
-        var r = _secEl.getBoundingClientRect();
-        return (r.top < H * 0.75 && r.bottom > H * 0.25) ? 1 : 0;
+        if (!_sec1 || !_sec1.isConnected || !_sec2 || !_sec2.isConnected) refreshEls(w);
+        return (secVisible(_sec1, H) || secVisible(_sec2, H)) ? 1 : 0;
       } catch (e) { return 0; }
     }
 
@@ -497,6 +503,9 @@
       var colSpan = Math.max(6, Math.round(d.cols * 0.05)); // janela de rastreio (horiz.)
       var rowSpan = Math.max(3, Math.round(d.rows * 0.03)); // janela de rastreio (vert.)
       var ease = 1 - Math.exp(-dt / 0.32);                  // suavização temporal
+      // na ÚLTIMA seção (lead-form), o spawn acontece 200px mais à esquerda
+      var leadVis = false; try { leadVis = secVisible(_sec2, rect.height); } catch (e) {}
+      var spawnShift = leadVis ? (200 / Math.max(1, rect.width)) : 0;
 
       for (var i = 0; i < markers.length; i++) {
         var mk = markers[i];
@@ -510,7 +519,8 @@
               var mo = markers[oj];
               if (mo.state !== 'wait' && mo.ready) occ.push({ colN: mo.colN, rowN: mo.rowN });
             }
-            if (spawn(mk, d, occ, 15 / vw, 15 / vh, 150 / vh, 1 - 150 / vh)) { mk.state = 'in'; mk.t = 0; }
+            var smin = Math.max(0.02, SPAWN_MIN - spawnShift), smax = Math.max(0.04, SPAWN_MAX - spawnShift);
+            if (spawn(mk, d, occ, 15 / vw, 15 / vh, 150 / vh, 1 - 150 / vh, smin, smax)) { mk.state = 'in'; mk.t = 0; }
           }
           mk.linked = false; mk.el.style.opacity = '0'; continue;
         }

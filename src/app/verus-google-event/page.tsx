@@ -43,7 +43,7 @@ export default function VerusGoogleEventPage() {
                 <h2 className="mt-4 text-balance font-display text-[clamp(1.85rem,4vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em]">
                   <Highlight text={f.titulo} mark={f.destaque} />
                 </h2>
-                <p className="mt-5 max-w-md text-base leading-relaxed text-cloud-muted">
+                <p className="mt-5 max-w-md text-pretty text-base leading-relaxed text-cloud-muted">
                   {f.paragrafo}
                 </p>
               </div>

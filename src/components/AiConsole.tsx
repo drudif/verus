@@ -3,41 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { content } from "@/content";
 
-const stroke = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.6,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
+// Estrela de 4 pontas (a marca) — usada inteira ao lado do título do card.
+const STAR_FULL =
+  "M12 1.9 C 12.6 9 15 11.4 22.1 12 C 15 12.6 12.6 15 12 22.1 C 11.4 15 9 12.6 1.9 12 C 9 11.4 11.4 9 12 1.9 Z";
 
-// Ícones por analista (na mesma ordem de content.console.analistas)
-const ICONS = [
-  (
-    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-      <polyline points="2,18 8,12 13,16 22,6" />
-      <polyline points="17,6 22,6 22,11" />
-    </svg>
-  ),
-  (
-    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
-  (
-    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    </svg>
-  ),
-  (
-    <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  ),
-];
+// Ícone por analista: um "V" (Satoshi) rotacionado — começa de cabeça pra
+// baixo na Ada (180°) e segue a rotação nas demais.
+const ICONS = [180, 270, 0, 90].map((deg) => (
+  <span
+    aria-hidden
+    className="font-display text-[17px] font-bold leading-none"
+    style={{ display: "inline-block", transform: `rotate(${deg}deg)` }}
+  >
+    V
+  </span>
+));
 
 const AIS = content.console.analistas;
 const QUESTIONS = content.console.perguntas;
@@ -46,10 +26,10 @@ export default function AiConsole({ className = "" }: { className?: string }) {
   const [text, setText] = useState("");
   const [active, setActive] = useState<number | null>(null);
   const [pressed, setPressed] = useState(false);
+  const [shown, setShown] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  const travelerRef = useRef<HTMLSpanElement>(null);
   const aiRefs = useRef<Array<HTMLLIElement | null>>([]);
 
   useEffect(() => {
@@ -60,74 +40,26 @@ export default function AiConsole({ className = "" }: { className?: string }) {
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-    function fly(aiIndex: number) {
-      const c = containerRef.current;
-      const b = boxRef.current;
-      const a = aiRefs.current[aiIndex];
-      const t = travelerRef.current;
-      if (!c || !b || !a || !t) return;
-      // mira o centro exato do ícone da IA (primeiro filho do <li>)
-      const iconEl = (a.firstElementChild as HTMLElement) ?? a;
-      const cr = c.getBoundingClientRect();
-      const br = b.getBoundingClientRect();
-      const ir = iconEl.getBoundingClientRect();
-      const sx = br.left + br.width / 2 - cr.left;
-      const sy = br.top + 8 - cr.top;
-      const ex = ir.left + ir.width / 2 - cr.left;
-      const ey = ir.top + ir.height / 2 - cr.top;
-
-      t.style.transition = "none";
-      t.style.left = `${sx}px`;
-      t.style.top = `${sy}px`;
-      t.style.opacity = "1";
-      t.style.transform = "translate(-50%,-50%) scale(1)";
-      void t.offsetWidth; // reflow
-      t.style.transition =
-        "left .5s var(--ease-out-expo), top .5s var(--ease-out-expo), transform .5s var(--ease-out-expo), opacity .5s ease";
-      t.style.left = `${ex}px`;
-      t.style.top = `${ey}px`;
-      t.style.transform = "translate(-50%,-50%) scale(0.6)";
-      window.setTimeout(() => {
-        if (travelerRef.current) travelerRef.current.style.opacity = "0";
-      }, 430);
-    }
-
     async function run() {
       let q = 0;
       while (alive) {
-        const full = QUESTIONS[q];
-
-        // digita um caractere por vez (rápido)
-        for (let i = 1; i <= full.length && alive; i += 1) {
-          setText(full.slice(0, i));
-          await sleep(reduce ? 0 : 14);
-        }
+        // o texto inteiro entra em fade
+        setText(QUESTIONS[q]);
+        setShown(true);
+        await sleep(2500); // fica visível ~2,5s
         if (!alive) return;
-        setText(full);
-        await sleep(reduce ? 400 : 700);
 
-        // box "aperta" (envio)
+        // animação do click; a IA da vez acende
         setPressed(true);
-        await sleep(170);
+        await sleep(180);
         setPressed(false);
-
-        // conteúdo viaja até a IA da vez
-        if (!reduce) {
-          fly(q);
-          await sleep(480);
-        }
-
-        // a IA acende
         setActive(q);
-        await sleep(900);
+        await sleep(reduce ? 300 : 520);
         setActive(null);
-        await sleep(120);
 
-        // apaga rápido e segue para a próxima
-        for (let i = full.length; i >= 0 && alive; i -= 6) {
-          setText(full.slice(0, Math.max(0, i)));
-          await sleep(reduce ? 0 : 10);
-        }
+        // o texto sai em fade; entra o próximo na sequência
+        setShown(false);
+        await sleep(reduce ? 0 : 420);
         q = (q + 1) % QUESTIONS.length;
       }
     }
@@ -141,7 +73,18 @@ export default function AiConsole({ className = "" }: { className?: string }) {
   return (
     <div ref={containerRef} className={`glass relative p-7 ${className}`}>
       <div className="flex items-center justify-between">
-        <span className="eyebrow">{content.console.eyebrow}</span>
+        <span className="eyebrow">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
+            <path
+              d={STAR_FULL}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {content.console.eyebrow}
+        </span>
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-magenta opacity-60" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-magenta" />
@@ -198,18 +141,13 @@ export default function AiConsole({ className = "" }: { className?: string }) {
         </p>
         <p
           aria-live="polite"
-          className="mt-1.5 min-h-[2.5rem] text-sm leading-snug text-cloud"
+          className={`mt-1.5 min-h-[2.5rem] text-sm leading-snug text-cloud transition-opacity duration-500 ${
+            shown ? "opacity-100" : "opacity-0"
+          }`}
         >
-          &ldquo;{text}
-          <span className="type-caret" aria-hidden="true">
-            |
-          </span>
-          &rdquo;
+          &ldquo;{text}&rdquo;
         </p>
       </div>
-
-      {/* pulso que viaja do box até a IA */}
-      <span ref={travelerRef} className="travel-dot" aria-hidden="true" />
     </div>
   );
 }

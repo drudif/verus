@@ -115,6 +115,17 @@
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
   }
 
+  /* faixa diurna — fundo turquesa da paleta, highlights em cinza claro */
+  .day-band {
+    background: #89d6bc;
+  }
+  .day-band .eyebrow {
+    color: #121c20; /* cinza azulado escuro */
+  }
+  .day-band .text-gradient {
+    color: #ededea; /* só o destaque do título em cinza claro */
+  }
+
   /* botão primário — AMARELO, texto escuro, sombra dura preta, cantos 4px */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-bold;

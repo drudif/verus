@@ -44,6 +44,9 @@ const config: Config = {
         yellow: {
           DEFAULT: "#ECF44B",
         },
+        orange: {
+          DEFAULT: "#F39E2A",
+        },
         // tema ESCURO: "cloud" é a cor de texto claro sobre o fundo escuro.
         cloud: {
           DEFAULT: "#ECE9E1",

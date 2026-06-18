@@ -28,18 +28,14 @@ export default function Hero() {
             <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-cloud-muted">
               {h.paragrafo}
             </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-9">
               <a href="#lead-form" className="btn-primary">
                 {h.ctaPrimario}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </a>
-              <a href="#arquitetura" className="btn-ghost">
-                {h.ctaSecundario}
-              </a>
             </div>
-            <p className="mt-6 text-xs text-cloud-faint">{h.fineprint}</p>
           </Reveal>
 
           {/* card — console dos quatro analistas com pergunta → IA */}
