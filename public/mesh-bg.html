@@ -320,6 +320,14 @@
     var canvas = document.getElementById('mesh-bg');
     var layer = document.getElementById('mesh-markers');
     if (!canvas || !layer) return;
+    // ?markers=0 desliga toda a camada de marcadores (pontos, códigos, linhas)
+    // — mantém só as curvas de contorno. Usado na versão mobile.
+    try {
+      if (new URLSearchParams(location.search).get('markers') === '0') {
+        layer.style.display = 'none';
+        return;
+      }
+    } catch (e) {}
 
     var CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
     var COLORS = ['89D6BC', 'EEE959', 'EDEDEA', 'F39E2A']; // cor sorteada por marcador

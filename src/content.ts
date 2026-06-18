@@ -29,7 +29,7 @@ export const content = {
       "Marque uma reunião com os dados da sua campanha",
     destaque: "dados da sua campanha",
     paragrafo:
-      "Plataforma Convert que conecta seus dados em uma IA conversacional para decisões mais rápidas e precisas",
+      "Verus é uma plataforma da Convert que conecta seus dados em uma IA conversacional para decisões mais rápidas e precisas",
     ctaPrimario: "Quero saber mais sobre o Verus",
   },
 

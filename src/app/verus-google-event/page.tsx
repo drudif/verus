@@ -17,7 +17,7 @@ export default function VerusGoogleEventPage() {
       {/* Fundo mesh animado (brand-tuned) — camada fixa atrás de todo o conteúdo.
           ?v= força o navegador a buscar a versão atual (evita iframe em cache). */}
       <iframe
-        src="/mesh-bg.html?v=6"
+        src="/mesh-bg.html?v=7"
         title=""
         aria-hidden="true"
         tabIndex={-1}
