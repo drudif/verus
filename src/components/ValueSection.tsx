@@ -15,7 +15,7 @@ export default function ValueSection() {
         <Reveal>
           <span className="eyebrow">
             <span className="h-1.5 w-1.5 rounded-full bg-magenta" />
-            Por que o Verus existe
+            Por que o Verus existe?
           </span>
           <h2 className="mt-4 text-balance font-display text-[clamp(1.85rem,4vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em]">
             Empresas já têm dados. O desafio é transformar dados em{" "}

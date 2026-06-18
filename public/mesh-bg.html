@@ -425,29 +425,22 @@
 
     // ---- visibilidade por SEÇÃO (lê a página pai; iframe é same-origin) ----
     // O conjunto só aparece nas seções INTERMEDIÁRIAS: some na 1ª (hero) e na última.
-    var _mainEl = null, _firstEl = null, _lastEl = null;
+    var _secEl = null;
     function pageWin() {
       try { return (window.parent && window.parent !== window) ? window.parent : window; }
       catch (e) { return window; }
     }
     function refreshEls(w) {
-      try {
-        var pdoc = w.document;
-        _mainEl = pdoc.querySelector('main');
-        _firstEl = _mainEl ? _mainEl.children[0] : null;        // 1ª seção (hero)
-        _lastEl = pdoc.querySelector('#lead-form') || pdoc.querySelector('footer'); // última seção
-        if (!_lastEl && _mainEl && _mainEl.children.length)
-          _lastEl = _mainEl.children[_mainEl.children.length - 1];
-      } catch (e) { _mainEl = _firstEl = _lastEl = null; }
+      try { _secEl = w.document.querySelector('#por-que'); } // seção "Por que o Verus existe"
+      catch (e) { _secEl = null; }
     }
-    function pageGate() {                 // 1 = seções do meio; 0 = primeira ou última
+    function pageGate() {                 // 1 = seção "Por que o Verus existe" visível na tela
       try {
         var w = pageWin(), H = w.innerHeight || 1;
-        if (!_firstEl || !_lastEl || !_firstEl.isConnected || !_lastEl.isConnected) refreshEls(w);
-        if (!_firstEl || !_lastEl) return 0;
-        var afterFirst = _firstEl.getBoundingClientRect().bottom <= H * 0.4; // hero já saiu
-        var beforeLast = _lastEl.getBoundingClientRect().top >= H * 0.6;     // última ainda não chegou
-        return (afterFirst && beforeLast) ? 1 : 0;
+        if (!_secEl || !_secEl.isConnected) refreshEls(w);
+        if (!_secEl) return 0;
+        var r = _secEl.getBoundingClientRect();
+        return (r.top < H * 0.75 && r.bottom > H * 0.25) ? 1 : 0;
       } catch (e) { return 0; }
     }
 

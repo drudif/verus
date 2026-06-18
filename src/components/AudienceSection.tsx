@@ -29,7 +29,7 @@ export default function AudienceSection() {
       <Reveal className="max-w-2xl">
         <span className="eyebrow">
           <span className="h-1.5 w-1.5 rounded-full bg-magenta" />
-          Para quem é
+          Para quem é?
         </span>
         <h2 className="mt-4 text-balance font-display text-[clamp(1.85rem,4vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em]">
           Feito para quem decide com{" "}

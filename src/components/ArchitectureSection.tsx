@@ -74,7 +74,7 @@ export default function ArchitectureSection() {
         <Reveal className="max-w-3xl">
           <span className="eyebrow">
             <span className="h-1.5 w-1.5 rounded-full bg-magenta" />
-            O que o Verus conecta
+            O que o Verus conecta?
           </span>
           <h2 className="mt-4 text-balance font-display text-[clamp(1.85rem,4vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em]">
             O Verus é uma{" "}
