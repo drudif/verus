@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mesh Background — convert_ID_GEN</title>
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; height: 100%; background: #04141a; }
+  #mesh-bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* Indicadores topográficos (lado esquerdo) */
+  #mesh-markers { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  #mesh-links { position: fixed; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #mesh-links line { fill: none; stroke-width: 1; }
+  #mesh-markers .mk {
+    position: fixed; left: 0; top: 0; opacity: 0;
+    will-change: transform, opacity;
+    transition: opacity .12s linear;
+  }
+  #mesh-markers .mk-dot {
+    position: absolute; left: -2px; top: -2px; width: 4px; height: 4px;
+    border-radius: 50%; background: #89d6bc;
+  }
+  #mesh-markers .mk-lead {
+    position: absolute; left: 4px; top: 0; width: 7px; height: 1px;
+    background: rgba(137,214,188,.45);
+  }
+  #mesh-markers .mk-txt {
+    position: absolute; left: 13px; top: -5.5px; white-space: nowrap;
+    font-family: 'Satoshi', sans-serif; font-weight: 400; font-size: 10px;
+    line-height: 1; letter-spacing: .6px; color: rgba(137,214,188,.72);
+    text-shadow: 0 0 4px rgba(4,20,26,.9);
+  }
+</style>
+</head>
+<body>
+<!-- ====== COMO EMBUTIR NO SEU SITE ======
+  1. Cole o <canvas> abaixo onde quiser o fundo (ou deixe fixed em tela cheia).
+  2. Cole os DOIS <script> abaixo (o runtime + o mount).
+  3. Estilize o #mesh-bg como quiser (position: fixed/absolute, z-index: -1, etc).
+  Sem dependências, sem build.
+
+  PERFORMANCE (no objeto CONFIG abaixo). As LINHAS são vetoriais → nítidas em
+  qualquer resolução; o custo está na GRADE de amostragem (gridCols), não na res.
+  - gridCols: nº de amostras da grade. MENOS = mais rápido (forma mais facetada),
+    MAIS = mais suave/pesado. Padrão 480. É o principal botão de performance.
+  - maxWidth: teto do lado maior do buffer (px, já com DPR). Nitidez. Padrão 2560.
+  - maxDpr:   teto de devicePixelRatio do buffer. Padrão 2.
+  - fps:      teto de quadros por segundo. Padrão 30.
+  Respeita prefers-reduced-motion (renderiza 1 quadro estático).
+======================================== -->
+<canvas id="mesh-bg"></canvas>
+<div id="mesh-markers"></div>
+<script>(function (global) {
+  'use strict';
+
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var MORPH_FREQ = 0.6, MORPH_GAIN = 0.4;
+  function morphOffset(ox, oy, time, amp) {
+    if (amp <= 0) return [ox, oy];
+    var phase = (ox + 1) * 3.1 + (oy + 1) * 5.3;
+    var w = amp * MORPH_GAIN;
+    function wob(tt) {
+      var t = tt * MORPH_FREQ;
+      return [Math.sin(t + phase), Math.cos(t + phase * 1.27)];
+    }
+    var a = wob(time), b = wob(0);
+    return [ox + w * (a[0] - b[0]), oy + w * (a[1] - b[1])];
+  }
+
+  var TWO_PI = Math.PI * 2;
+  var OCT = 3, FREQ_MULT = 1.9, GAIN = 0.4, WARP_AMP = 0.16, WARP_SPEED = 0.5;
+  var BASE_CYCLES_LONG = 0.35, BASE_CYCLES_SHORT = 2.2;
+  function makeWarp(seed, warp, scale, time, minDim) {
+    if (warp <= 0 || minDim <= 0) return function () { return [0, 0]; };
+    var rng = mulberry32(((seed | 0) ^ 0x5bd1e995) >>> 0);
+    var ampPx = warp * WARP_AMP * minDim;
+    var s = Math.max(0, Math.min(1, scale));
+    var BASE_CYCLES = BASE_CYCLES_SHORT + (BASE_CYCLES_LONG - BASE_CYCLES_SHORT) * s;
+    var t = time * WARP_SPEED;
+    var norm = 0, o;
+    for (o = 0; o < OCT; o++) norm += Math.pow(GAIN, o);
+    var oct = [];
+    for (o = 0; o < OCT; o++) {
+      var f = ((BASE_CYCLES * Math.pow(FREQ_MULT, o)) / minDim) * TWO_PI;
+      var a = (ampPx * Math.pow(GAIN, o)) / norm;
+      var ax = rng() * TWO_PI, ay = rng() * TWO_PI;
+      oct.push({ f: f, a: a, dcx: Math.cos(ax), dsx: Math.sin(ax), dcy: Math.cos(ay), dsy: Math.sin(ay),
+        px: rng() * TWO_PI, py: rng() * TWO_PI, tx: rng() * 2 - 1, ty: rng() * 2 - 1 });
+    }
+    return function (x, y) {
+      var dx = 0, dy = 0;
+      for (var i = 0; i < oct.length; i++) {
+        var k = oct[i];
+        dx += k.a * Math.sin(k.f * (x * k.dcx + y * k.dsx) + k.px + t * k.tx);
+        dy += k.a * Math.sin(k.f * (x * k.dcy + y * k.dsy) + k.py + t * k.ty);
+      }
+      return [dx, dy];
+    };
+  }
+
+  function hexToRgb(hex) {
+    var m = hex.replace('#', '');
+    return [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)];
+  }
+  function rgbToHex(r, g, b) {
+    function h(v) { return Math.round(v).toString(16).padStart(2, '0'); }
+    return '#' + h(r) + h(g) + h(b);
+  }
+  function sampleRamp(colors, pos) {
+    var n = colors.length;
+    if (n === 1) return colors[0];
+    var x = Math.max(0, Math.min(1, pos)) * (n - 1);
+    var i = Math.floor(x);
+    if (i >= n - 1) return colors[n - 1];
+    var f = x - i, a = hexToRgb(colors[i]), b = hexToRgb(colors[i + 1]);
+    return rgbToHex(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f);
+  }
+
+  function seg(ctx, ax, ay, bx, by) { ctx.moveTo(ax, ay); ctx.lineTo(bx, by); }
+  function drawContours(ctx, field, cols, rows, cellW, cellH, levels, colors, lineWidth) {
+    ctx.lineWidth = lineWidth; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    for (var li = 0; li < levels.length; li++) {
+      var level = levels[li];
+      ctx.strokeStyle = colors[li] != null ? colors[li] : colors[colors.length - 1];
+      ctx.beginPath();
+      for (var j = 0; j < rows - 1; j++) {
+        var rowTop = j * cols, rowBot = (j + 1) * cols, y = j * cellH;
+        for (var i = 0; i < cols - 1; i++) {
+          var tl = field[rowTop + i], tr = field[rowTop + i + 1], br = field[rowBot + i + 1], bl = field[rowBot + i];
+          var code = (tl > level ? 8 : 0) | (tr > level ? 4 : 0) | (br > level ? 2 : 0) | (bl > level ? 1 : 0);
+          if (code === 0 || code === 15) continue;
+          var x = i * cellW;
+          var topX = x + cellW * ((level - tl) / (tr - tl)), topY = y;
+          var rightX = x + cellW, rightY = y + cellH * ((level - tr) / (br - tr));
+          var botX = x + cellW * ((level - bl) / (br - bl)), botY = y + cellH;
+          var leftX = x, leftY = y + cellH * ((level - tl) / (bl - tl));
+          var avg = (tl + tr + br + bl) * 0.25;
+          switch (code) {
+            case 1: case 14: seg(ctx, leftX, leftY, botX, botY); break;
+            case 2: case 13: seg(ctx, botX, botY, rightX, rightY); break;
+            case 3: case 12: seg(ctx, leftX, leftY, rightX, rightY); break;
+            case 4: case 11: seg(ctx, topX, topY, rightX, rightY); break;
+            case 6: case 9: seg(ctx, topX, topY, botX, botY); break;
+            case 7: case 8: seg(ctx, topX, topY, leftX, leftY); break;
+            case 5:
+              if (avg > level) { seg(ctx, topX, topY, leftX, leftY); seg(ctx, botX, botY, rightX, rightY); }
+              else { seg(ctx, topX, topY, rightX, rightY); seg(ctx, leftX, leftY, botX, botY); }
+              break;
+            case 10:
+              if (avg > level) { seg(ctx, topX, topY, rightX, rightY); seg(ctx, leftX, leftY, botX, botY); }
+              else { seg(ctx, topX, topY, leftX, leftY); seg(ctx, botX, botY, rightX, rightY); }
+              break;
+          }
+        }
+      }
+      ctx.stroke();
+    }
+  }
+
+  var TILE_SIZE = 512, TILE_SEED = 0x6e6f6973, cachedTile = null;
+  function getNoiseTile() {
+    if (cachedTile) return cachedTile;
+    var c = document.createElement('canvas'); c.width = TILE_SIZE; c.height = TILE_SIZE;
+    var ctx = c.getContext('2d');
+    var img = ctx.createImageData(TILE_SIZE, TILE_SIZE);
+    var rng = mulberry32(TILE_SEED);
+    for (var i = 0; i < img.data.length; i += 4) {
+      var v = Math.floor(rng() * 256);
+      img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0); cachedTile = c; return c;
+  }
+  function applyGrain(target, intensity) {
+    if (intensity <= 0) return;
+    var ctx = target.getContext('2d'), tile = getNoiseTile();
+    ctx.save(); ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = intensity;
+    for (var y = 0; y < target.height; y += TILE_SIZE)
+      for (var x = 0; x < target.width; x += TILE_SIZE) ctx.drawImage(tile, x, y);
+    ctx.restore();
+  }
+
+  var MINI_COUNT = 8, MINI_R_SCALE = 1 / Math.sqrt(MINI_COUNT), MINI_OFFSET_SCALE = 0.65;
+  var CELL_PX = 2.5, FLOW_FREQ = 0.15;
+  function renderMesh(target, cfg, width, height, time) {
+    target.width = width; target.height = height;
+    var ctx = target.getContext('2d');
+    ctx.fillStyle = cfg.background; ctx.fillRect(0, 0, width, height);
+
+    var minDim = Math.min(width, height);
+    var offsetScale = MINI_OFFSET_SCALE * cfg.irregularity;
+    var warp = makeWarp(cfg.composition.seed, cfg.warp, cfg.warpScale, time, minDim);
+    var blobs = cfg.composition.blobs.map(function (b) {
+      var r = b.radius * minDim, miniR = r * MINI_R_SCALE, miniRSq = miniR * miniR;
+      var cx = b.x * width, cy = b.y * height;
+      var minis = b.harmonics.minis.map(function (m) {
+        var o = morphOffset(m.ox, m.oy, time, cfg.morphAmp);
+        return { cx: cx + o[0] * r * offsetScale, cy: cy + o[1] * r * offsetScale };
+      });
+      return { miniRSq: miniRSq, minis: minis };
+    });
+    var nBlobs = blobs.length;
+
+    // Grade com nº de colunas FIXO (gridCols) → custo independe da resolução do
+    // buffer: o canvas pode ser 4K (linhas nítidas) sem encarecer a amostragem.
+    var cell = Math.max(1, width / (cfg.gridCols || 480));
+    var cols = Math.floor(width / cell) + 1, rows = Math.floor(height / cell) + 1;
+    var blobGrid = new Float32Array(cols * rows);
+    var blobMax = 1e-6, j, i, b, m;
+    for (j = 0; j < rows; j++) {
+      var py = j * cell;
+      for (i = 0; i < cols; i++) {
+        var px = i * cell, wv = warp(px, py), sx = px + wv[0], sy = py + wv[1], f = 0;
+        for (b = 0; b < nBlobs; b++) {
+          var minis = blobs[b].minis, miniRSq = blobs[b].miniRSq;
+          for (m = 0; m < minis.length; m++) {
+            var dx = sx - minis[m].cx, dy = sy - minis[m].cy;
+            f += miniRSq / (dx * dx + dy * dy + miniRSq);
+          }
+        }
+        blobGrid[j * cols + i] = f; if (f > blobMax) blobMax = f;
+      }
+    }
+
+    var gamma = 1 / (1 + cfg.meshRelief * 2);
+    var field = new Float32Array(cols * rows), hMin = Infinity, hMax = -Infinity, k;
+    for (k = 0; k < field.length; k++) {
+      var h = Math.pow(blobGrid[k] / blobMax, gamma);
+      field[k] = h; if (h < hMin) hMin = h; if (h > hMax) hMax = h;
+    }
+
+    var span = (hMax - hMin) || 1;
+    var nLevels = Math.max(1, Math.round(cfg.meshLevels));
+    var flow = cfg.meshFlow !== 0 ? (((time * cfg.meshFlow * FLOW_FREQ * cfg.meshFlowDir) % 1) + 1) % 1 : 0;
+    var levels = [];
+    for (k = 0; k < nLevels; k++) levels.push(hMin + span * ((((k + 0.5) / nLevels) + flow) % 1));
+
+    var colors;
+    if (cfg.meshColorMode === 'palette') {
+      var ramp = cfg.stops.filter(function (s) { return s.alpha >= 0.05; }).map(function (s) { return s.color; });
+      var safeRamp = ramp.length ? ramp : [cfg.meshLineColor];
+      colors = levels.map(function (lv) { return sampleRamp(safeRamp, 1 - (lv - hMin) / span); });
+    } else {
+      colors = levels.map(function () { return cfg.meshLineColor; });
+    }
+
+    var lw = Math.max(0.4, cfg.meshLineWidth);
+    drawContours(ctx, field, cols, rows, cell, cell, levels, colors, lw);
+    applyGrain(target, cfg.grain);
+
+    // Expõe o campo deste quadro para overlays (ex.: indicadores topográficos).
+    if (typeof cfg._onFrame === 'function') {
+      cfg._onFrame({ field: field, cols: cols, rows: rows, cell: cell,
+        hMin: hMin, span: span, flow: flow, nLevels: nLevels,
+        width: width, height: height, time: time });
+    }
+  }
+
+  function perfNow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
+  function mount(target, config) {
+    var canvas = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!canvas) throw new Error('MeshBackground: canvas não encontrado: ' + target);
+    var speed = config.speed != null ? config.speed : 1;
+    var maxW = config.maxWidth || 2560;
+    var maxDpr = config.maxDpr || 2;
+    var fps = config.fps || 30;
+    var minDt = 1000 / fps;
+    var running = true;
+    var start = perfNow();
+    var last = -1e9;
+    var reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Buffer em resolução cheia (CSS × DPR, com teto maxW) → linhas NÍTIDAS. O
+    // custo é controlado por gridCols (amostras), não pela resolução.
+    function dims() {
+      var dpr = Math.min(maxDpr, global.devicePixelRatio || 1);
+      var rect = canvas.getBoundingClientRect();
+      var cw = (rect.width || canvas.clientWidth || 1) * dpr;
+      var ch = (rect.height || canvas.clientHeight || 1) * dpr;
+      var scale = Math.min(1, maxW / Math.max(cw, ch));
+      return [Math.max(1, Math.round(cw * scale)), Math.max(1, Math.round(ch * scale))];
+    }
+    function frame() {
+      if (!running) return;
+      var now = perfNow();
+      if (now - last >= minDt) {
+        last = now;
+        var time = reduce ? 0 : (now - start) / 1000 * speed;
+        var d = dims();
+        renderMesh(canvas, config, d[0], d[1], time);
+        if (reduce) { running = false; return; }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+    return { stop: function () { running = false; } };
+  }
+
+  global.MeshBackground = { mount: mount };
+})(typeof window !== 'undefined' ? window : this);</script>
+<script>
+  var CONFIG = {"background":"#04141a","stops":[{"color":"#ededea","alpha":1},{"color":"#89d6bc","alpha":0.95},{"color":"#32524e","alpha":0.85},{"color":"#32524e","alpha":0.6},{"color":"#32524e","alpha":0.4},{"color":"#04141a","alpha":1}],"composition":{"seed":578246605,"blobs":[{"x":0.9874917929526419,"y":0.23667869339697062,"radius":0.2770838336274028,"harmonics":{"minis":[{"ox":-0.4909331598319113,"oy":0.996339088305831},{"ox":-0.7945454525761306,"oy":0.7368265730328858},{"ox":0.8160442900843918,"oy":0.2544379457831383},{"ox":-0.8485696208663285,"oy":0.6531670489348471},{"ox":-0.5521763521246612,"oy":-0.5872043208219111},{"ox":0.1323440303094685,"oy":-0.06482366845011711},{"ox":0.15140180150046945,"oy":-0.9333114884793758},{"ox":-0.054663609713315964,"oy":0.9819397078827024}]}},{"x":0.8216483455616981,"y":0.13865427272394298,"radius":0.24370505828410388,"harmonics":{"minis":[{"ox":-0.22450494254007936,"oy":0.2800297695212066},{"ox":-0.5151258856058121,"oy":-0.5464477553032339},{"ox":-0.04316107323393226,"oy":-0.20010482147336006},{"ox":0.04428638843819499,"oy":-0.021430443041026592},{"ox":-0.9487298130989075,"oy":0.09750304464250803},{"ox":0.2488875612616539,"oy":0.9959413171745837},{"ox":-0.5094932289794087,"oy":0.39657228300347924},{"ox":0.697657398879528,"oy":0.8829742837697268}]}},{"x":0.6453830151392592,"y":0.34145611435687295,"radius":0.15718026835471394,"harmonics":{"minis":[{"ox":0.8428425346501172,"oy":0.27351444121450186},{"ox":0.5648066676221788,"oy":-0.6160610229708254},{"ox":0.6026275306940079,"oy":-0.06798353279009461},{"ox":-0.6218644478358328,"oy":-0.8011846081353724},{"ox":-0.08012551115825772,"oy":-0.7559031303972006},{"ox":-0.2993372017517686,"oy":0.40420820377767086},{"ox":0.9268479277379811,"oy":-0.8250080388970673},{"ox":0.9694218970835209,"oy":-0.9965511141344905}]}}]},"irregularity":0.95,"warp":0.55,"warpScale":0.73,"grain":0.11,"morphAmp":1,"meshFlow":0.23,"meshFlowDir":-1,"meshLevels":80,"meshLineWidth":0.6,"meshRelief":0.33,"meshLineColor":"#32524e","meshColorMode":"solid","speed":0.15,"maxWidth":2560,"gridCols":480,"maxDpr":2,"fps":30};
+  // ===== Indicadores topográficos no lado esquerdo =====
+  // Cada marcador nasce grudado em uma linha de contorno (um nível do campo) e
+  // acompanha esse nível enquanto as linhas se expandem/escorrem. Aparece e
+  // some aleatoriamente, com um código de 8 caracteres ao lado (Satoshi 8px).
+  (function () {
+    var canvas = document.getElementById('mesh-bg');
+    var layer = document.getElementById('mesh-markers');
+    if (!canvas || !layer) return;
+
+    var CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    var COLORS = ['89D6BC', 'EEE959', 'EDEDEA', 'F39E2A']; // cor sorteada por marcador
+    function ri(n) { return Math.floor(Math.random() * n); }
+    function rr(a, b) { return a + Math.random() * (b - a); }
+    function code(n) { var s = ''; for (var i = 0; i < n; i++) s += CHARS[ri(CHARS.length)]; return s; }
+
+    var COUNT = 7;               // nº de indicadores simultâneos (máx.)
+    var SPAWN_MIN = 0.47, SPAWN_MAX = 0.50; // nasce NO CENTRO e deriva p/ a ESQUERDA
+    var LEFT_DRIFT = 0.025;      // deriva p/ esquerda (frações de coluna por seg.)
+
+    // Segmentos em degradê que conectam os marcadores visíveis ao mesmo tempo.
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('id', 'mesh-links');
+    var defs = document.createElementNS(NS, 'defs'); svg.appendChild(defs);
+    var MAX_SEG = COUNT * 2;     // arestas suficientes p/ cadeia + triangulação
+    var segs = [];
+    for (var sgi = 0; sgi < MAX_SEG; sgi++) {
+      var grad = document.createElementNS(NS, 'linearGradient');
+      grad.setAttribute('id', 'mkgrad' + sgi);
+      grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+      var st0 = document.createElementNS(NS, 'stop'); st0.setAttribute('offset', '0%');
+      var st1 = document.createElementNS(NS, 'stop'); st1.setAttribute('offset', '100%');
+      grad.appendChild(st0); grad.appendChild(st1); defs.appendChild(grad);
+      var ln = document.createElementNS(NS, 'line');
+      ln.setAttribute('stroke', 'url(#mkgrad' + sgi + ')');
+      ln.style.display = 'none'; svg.appendChild(ln);
+      segs.push({ line: ln, grad: grad, s0: st0, s1: st1 });
+    }
+    layer.appendChild(svg);
+
+    var markers = [];
+    for (var i = 0; i < COUNT; i++) {
+      var el = document.createElement('div'); el.className = 'mk';
+      var lead = document.createElement('span'); lead.className = 'mk-lead';
+      var dot = document.createElement('span'); dot.className = 'mk-dot';
+      var txt = document.createElement('span'); txt.className = 'mk-txt';
+      el.appendChild(lead); el.appendChild(dot); el.appendChild(txt);
+      layer.appendChild(el);
+      markers.push({ el: el, txt: txt, dot: dot, lead: lead, state: 'wait', t: 0,
+        dur: rr(0, 5), levelBase: 0, colN: 0, rowN: 0.5,
+        op: 0, vis: 0, fade: 0.45, linked: false });
+    }
+
+    // Procura um ponto sobre a linha de nível `target`, varrendo as colunas da
+    // faixa esquerda e escolhendo o cruzamento mais próximo de (prefCol, prefRow).
+    // Retorna em coordenadas normalizadas + px do buffer, ou null se não houver
+    // nenhuma linha desse nível na região buscada.
+    function findOnLevel(d, target, prefColN, prefRowN, colSpan, rowSpan) {
+      var cols = d.cols, rows = d.rows, field = d.field;
+      var bandLo = 0, bandHi = cols - 1;          // largura toda
+      var pc = prefColN * (cols - 1), pr = prefRowN * (rows - 1);
+      var lo = Math.max(bandLo, Math.round(pc - colSpan));
+      var hi = Math.min(bandHi, Math.round(pc + colSpan));
+      var jLo = Math.max(0, Math.floor(pr - rowSpan));
+      var jHi = Math.min(rows - 2, Math.ceil(pr + rowSpan));
+      var bestCol = -1, bestRow = -1, bestD = 1e18;
+      for (var i0 = lo; i0 <= hi; i0++) {
+        for (var j = jLo; j <= jHi; j++) {
+          var a = field[j * cols + i0] - target, b = field[(j + 1) * cols + i0] - target;
+          if ((a <= 0 && b > 0) || (a > 0 && b <= 0)) {
+            var rj = j + a / (a - b);            // interpola o cruzamento
+            var dc = i0 - pc, dr = rj - pr;
+            var dd = dc * dc + dr * dr;           // mais próximo da posição anterior
+            if (dd < bestD) { bestD = dd; bestCol = i0; bestRow = rj; }
+          }
+        }
+      }
+      if (bestCol < 0) return null;
+      return { colN: bestCol / (cols - 1), rowN: bestRow / (rows - 1),
+        bx: bestCol * d.cell, by: bestRow * d.cell };
+    }
+
+    // Nasce: escolhe uma linha (nível) que realmente exista na faixa esquerda.
+    function spawn(mk, d, occ, minGX, minGY, yMin, yMax) {
+      for (var k = 0; k < 28; k++) {
+        var lb = Math.random();
+        var target = d.hMin + d.span * ((((lb + d.flow) % 1) + 1) % 1);
+        var pc = rr(SPAWN_MIN, SPAWN_MAX), pr = rr(yMin, yMax);
+        var spawnSpan = Math.max(4, Math.round(0.05 * (d.cols - 1))); // confina ao CENTRO
+        var p = findOnLevel(d, target, pc, pr, spawnSpan, d.rows);
+        if (!p || p.colN > SPAWN_MAX + 0.02) continue;   // nunca à direita do centro
+        if (p.rowN < yMin || p.rowN > yMax) continue;    // área visível (margem 150px)
+        var ok = true;                                    // espaçamento mín. 15px em X e Y
+        for (var oi = 0; oi < occ.length; oi++) {
+          if (Math.abs(p.colN - occ[oi].colN) < minGX || Math.abs(p.rowN - occ[oi].rowN) < minGY) { ok = false; break; }
+        }
+        if (!ok) continue;
+        mk.levelBase = lb; mk.colN = p.colN; mk.rowN = p.rowN;
+        mk.colSpawn = p.colN; mk.prog = p.colN; // ref. p/ fade posicional (50%→0)
+        mk.ready = false;                      // 1º quadro: posiciona sem deslizar
+        mk.full = code(8); mk.txt.textContent = ''; mk.shown = 0; mk.charT = 0; // surge 1 a 1
+        var c = mk.color || COLORS[ri(COLORS.length)]; // cor definida pela leva
+        mk.color = c;
+        mk.dot.style.background = '#' + c;     // círculo SÓLIDO (sem blur)
+        mk.lead.style.background = '#' + c;
+        mk.txt.style.color = '#' + c;
+        mk.fade = rr(0.4, 0.7);                // duração dos fades (in/out)
+        return true;
+      }
+      return false; // nenhuma posição válida agora — tenta de novo logo
+    }
+
+    // ---- visibilidade por SEÇÃO (lê a página pai; iframe é same-origin) ----
+    // O conjunto só aparece nas seções INTERMEDIÁRIAS: some na 1ª (hero) e na última.
+    var _mainEl = null, _firstEl = null, _lastEl = null;
+    function pageWin() {
+      try { return (window.parent && window.parent !== window) ? window.parent : window; }
+      catch (e) { return window; }
+    }
+    function refreshEls(w) {
+      try {
+        var pdoc = w.document;
+        _mainEl = pdoc.querySelector('main');
+        _firstEl = _mainEl ? _mainEl.children[0] : null;        // 1ª seção (hero)
+        _lastEl = pdoc.querySelector('#lead-form') || pdoc.querySelector('footer'); // última seção
+        if (!_lastEl && _mainEl && _mainEl.children.length)
+          _lastEl = _mainEl.children[_mainEl.children.length - 1];
+      } catch (e) { _mainEl = _firstEl = _lastEl = null; }
+    }
+    function pageGate() {                 // 1 = seções do meio; 0 = primeira ou última
+      try {
+        var w = pageWin(), H = w.innerHeight || 1;
+        if (!_firstEl || !_lastEl || !_firstEl.isConnected || !_lastEl.isConnected) refreshEls(w);
+        if (!_firstEl || !_lastEl) return 0;
+        var afterFirst = _firstEl.getBoundingClientRect().bottom <= H * 0.4; // hero já saiu
+        var beforeLast = _lastEl.getBoundingClientRect().top >= H * 0.6;     // última ainda não chegou
+        return (afterFirst && beforeLast) ? 1 : 0;
+      } catch (e) { return 0; }
+    }
+
+    var lastT = null, gateAlpha = 0;
+    // LEVAS: grupos que aparecem/somem juntos, com tela vazia entre eles
+    var waveState = 'gap', waveT = 0, waveGap = 1.0, waveDur = 0, waveN = 0;
+    var waveExtra = false, extraA = null, extraB = null; // 30%: uma conexão extra na leva
+    CONFIG._onFrame = function (d) {
+      var now = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+      if (lastT == null) lastT = now;
+      var dt = Math.min(0.1, now - lastT); lastT = now;
+
+      // visibilidade global do conjunto conforme a seção atual (fade ~0.5s)
+      var gateTarget = pageGate();
+      gateAlpha += (gateTarget - gateAlpha) * (1 - Math.exp(-dt / 0.5));
+      layer.style.opacity = gateAlpha.toFixed(3);
+
+      // ---- LEVAS: grupos com entrada/saída ESCALONADAS e tela vazia entre eles ----
+      waveT += dt;
+      if (waveState === 'gap') {
+        var allIdle = true;
+        for (var ci = 0; ci < markers.length; ci++) if (markers[ci].state !== 'wait') { allIdle = false; break; }
+        if (gateTarget && allIdle && waveT >= waveGap) {  // recomeça LOGO APÓS a leva anterior sair
+          waveState = 'show'; waveT = 0; waveDur = rr(3.75, 8.25); // 50% mais tempo em tela
+          var n = 5, picked = 0, members = [];            // sempre 5 pontos por leva
+          for (var qi = 0; qi < markers.length; qi++) {
+            var mq2 = markers[qi]; mq2.inWave = false;
+            if (picked < n && mq2.state === 'wait') {
+              mq2.inWave = true;
+              mq2.spawnDelay = rr(0, 1.2);              // atraso de ENTRADA por ponto
+              mq2.exitDelay = rr(0, 1.0);               // atraso de SAÍDA por ponto
+              members.push(mq2); picked++;
+            }
+          }
+          // cores: palette embaralhado por leva → garante >=3 das 4 cores
+          var pal = COLORS.slice();
+          for (var ps = pal.length - 1; ps > 0; ps--) { var pj = ri(ps + 1), pt = pal[ps]; pal[ps] = pal[pj]; pal[pj] = pt; }
+          for (var mi = 0; mi < members.length; mi++) members[mi].color = pal[mi % pal.length];
+          // 30% das levas: um ponto ganha uma conexão extra com outro
+          waveExtra = Math.random() < 0.3;
+          extraA = extraB = null;
+          if (waveExtra && members.length >= 2) {
+            var ea = ri(members.length), eb = ri(members.length);
+            if (eb === ea) eb = (ea + 1) % members.length;
+            extraA = members[ea]; extraB = members[eb];
+          }
+        }
+      } else if (waveT >= waveDur || !gateTarget) {
+        waveState = 'gap'; waveT = 0; waveGap = rr(0.1, 0.4); // intervalo curto entre levas
+      }
+
+      var rect = canvas.getBoundingClientRect();
+      var rx = rect.width / d.width, ry = rect.height / d.height;
+      var colSpan = Math.max(6, Math.round(d.cols * 0.05)); // janela de rastreio (horiz.)
+      var rowSpan = Math.max(3, Math.round(d.rows * 0.03)); // janela de rastreio (vert.)
+      var ease = 1 - Math.exp(-dt / 0.32);                  // suavização temporal
+
+      for (var i = 0; i < markers.length; i++) {
+        var mk = markers[i];
+        mk.t += dt;
+        if (mk.state === 'wait') {
+          // nasce só se faz parte da leva atual e após seu atraso de entrada
+          if (waveState === 'show' && mk.inWave && gateTarget && waveT >= mk.spawnDelay) {
+            var vw = Math.max(1, rect.width), vh = Math.max(1, rect.height);
+            var occ = [];
+            for (var oj = 0; oj < markers.length; oj++) {
+              var mo = markers[oj];
+              if (mo.state !== 'wait' && mo.ready) occ.push({ colN: mo.colN, rowN: mo.rowN });
+            }
+            if (spawn(mk, d, occ, 15 / vw, 15 / vh, 150 / vh, 1 - 150 / vh)) { mk.state = 'in'; mk.t = 0; }
+          }
+          mk.linked = false; mk.el.style.opacity = '0'; continue;
+        }
+        // fim da leva: cada ponto sai após o SEU atraso de saída
+        if (waveState === 'gap' && (mk.state === 'in' || mk.state === 'live') && waveT >= mk.exitDelay) {
+          mk.state = 'out'; mk.t = 0;
+        }
+
+        // caracteres do código surgem um a um (0.1s cada)
+        if (mk.shown < 8) {
+          mk.charT += dt;
+          while (mk.shown < 8 && mk.charT >= 0.1) { mk.charT -= 0.1; mk.shown++; }
+          mk.txt.textContent = mk.full.slice(0, mk.shown);
+        }
+
+        // segue a linha (X) com a vertical TRAVADA, derivando p/ a ESQUERDA
+        var target = d.hMin + d.span * ((((mk.levelBase + d.flow) % 1) + 1) % 1);
+        var prefColN = mk.colN - LEFT_DRIFT * dt;
+        if (prefColN <= 0) {                     // chegou na borda esquerda: recicla
+          mk.state = 'wait'; mk.t = 0; mk.dur = rr(0.4, 2.5); mk.linked = false;
+          mk.el.style.opacity = '0'; continue;
+        }
+        var p = findOnLevel(d, target, prefColN, mk.rowN, colSpan, rowSpan);
+        var tx;
+        if (p) { mk.colN = p.colN; tx = rect.left + p.bx * rx; }
+        else { mk.colN = prefColN; tx = rect.left + prefColN * (d.cols - 1) * d.cell * rx; }
+        var ty = rect.top + (mk.rowN * (d.rows - 1)) * d.cell * ry; // altura fixa (sem tremor)
+        if (!mk.ready) { mk.dx = tx; mk.dy = ty; mk.ready = true; }
+        else { mk.dx += (tx - mk.dx) * ease; }
+        mk.dy = ty;                              // vertical travado
+        mk.cx = mk.dx; mk.cy = mk.dy;
+
+        // ciclo de vida ALEATÓRIO (nasce/morre) × fade POSICIONAL (50%→0 p/ esq.)
+        var lf;                                  // fator do ciclo de vida (0..1)
+        if (mk.state === 'in') {
+          lf = Math.min(1, mk.t / mk.fade);
+          if (mk.t >= mk.fade) { mk.state = 'live'; mk.t = 0; }
+        } else if (mk.state === 'live') {
+          lf = 1;                                // vive até o fim da leva
+        } else {                                 // out
+          lf = Math.max(0, 1 - mk.t / mk.fade);
+          if (mk.t >= mk.fade) {
+            mk.state = 'wait'; mk.t = 0; mk.dur = rr(0.6, 3.5); mk.linked = false;
+            mk.el.style.opacity = '0'; continue;
+          }
+        }
+        mk.prog = Math.min(mk.prog, prefColN);   // progresso monotônico p/ esquerda
+        var posF = Math.max(0, Math.min(1, mk.prog / mk.colSpawn));
+        mk.op = posF * lf;                       // envelope (posição × vida) — DOT sólido
+
+        mk.el.style.transform = 'translate(' + mk.cx + 'px,' + mk.cy + 'px)';
+        mk.el.style.opacity = (0.35 * mk.op).toFixed(3); // conjunto a 35%
+        mk.linked = mk.op > 0.02;
+      }
+
+      // conecta os marcadores visíveis com segmentos em degradê (cor→cor)
+      var vis = [];
+      for (var q = 0; q < markers.length; q++) {
+        var mq = markers[q];
+        if (mq.linked) vis.push({ x: mq.cx, y: mq.cy, op: mq.op, c: mq.color, key: mq.colSpawn, m: mq });
+      }
+      vis.sort(function (a, b) { return a.key - b.key; }); // ordem FIXA (colSpawn não muda)
+      var edges = [];
+      for (var e1 = 0; e1 < vis.length - 1; e1++) edges.push([e1, e1 + 1]); // cadeia
+      // 30% das levas: um ponto com uma conexão EXTRA a outro
+      if (waveExtra && extraA && extraB) {
+        var ia = -1, ib = -1;
+        for (var xi = 0; xi < vis.length; xi++) { if (vis[xi].m === extraA) ia = xi; if (vis[xi].m === extraB) ib = xi; }
+        if (ia >= 0 && ib >= 0) edges.push([ia, ib]);
+      }
+      for (var s = 0; s < segs.length; s++) {
+        var sg = segs[s];
+        if (s < edges.length) {
+          var va = vis[edges[s][0]], vb = vis[edges[s][1]];
+          sg.line.setAttribute('x1', va.x.toFixed(1)); sg.line.setAttribute('y1', va.y.toFixed(1));
+          sg.line.setAttribute('x2', vb.x.toFixed(1)); sg.line.setAttribute('y2', vb.y.toFixed(1));
+          sg.grad.setAttribute('x1', va.x.toFixed(1)); sg.grad.setAttribute('y1', va.y.toFixed(1));
+          sg.grad.setAttribute('x2', vb.x.toFixed(1)); sg.grad.setAttribute('y2', vb.y.toFixed(1));
+          sg.s0.setAttribute('stop-color', '#' + va.c);
+          sg.s1.setAttribute('stop-color', '#' + vb.c);
+          sg.line.setAttribute('stroke-opacity', (Math.min(va.op, vb.op) * 0.35).toFixed(3)); // 35%
+          sg.line.style.display = '';
+        } else {
+          sg.line.style.display = 'none';
+        }
+      }
+    };
+  })();
+
+  window.MeshBackground.mount('#mesh-bg', CONFIG);
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* âncoras não ficam escondidas sob a nav fixa */
+  section[id],
+  header[id] {
+    scroll-margin-top: 5rem;
+  }
+
+  /* entrada por scroll — fade + rise com curva exponencial */
+  .reveal {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.75s var(--ease-out-expo),
+      transform 0.75s var(--ease-out-expo);
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* tema ESCURO: o fundo agora é o mesh animado (.mesh-frame); a cor base
+     serve de fallback enquanto o canvas carrega. */
+  body {
+    @apply text-cloud antialiased;
+    background-color: #04141a;
+  }
+
+  /* fundo mesh animado — iframe full-screen, camada fixa atrás de todo o conteúdo */
+  .mesh-frame {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* grain de filme — textura tátil sutil sobre toda a página (não bloqueia cliques) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@layer components {
+  .container-px {
+    @apply mx-auto w-full max-w-container px-5 sm:px-8;
+  }
+
+  /* eyebrow em magenta (como na ref) — Satoshi Regular */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-sans text-[11px] font-normal uppercase tracking-[0.2em] text-magenta-bright;
+  }
+
+  /* destaque de palavras — cor sólida (sem degradê) */
+  .text-gradient {
+    color: #89d6bc;
+  }
+
+  /* superfície sólida elevada — sombra dura preta (sem blur), cantos de 4px */
+  .glass {
+    background: #0f1a1e;
+    border: 1px solid rgba(236, 233, 225, 0.12);
+    border-radius: 4px;
+    color: #ece9e1;
+    box-shadow: 6px 6px 0 #000;
+  }
+  .glass-hover {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.25s ease;
+  }
+  .glass-hover:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 9px 9px 0 #000;
+    border-color: rgba(137, 214, 188, 0.45);
+  }
+
+  .hairline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  }
+
+  /* botão primário — AMARELO, texto escuro, sombra dura preta, cantos 4px */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-bold;
+    background: #eee959;
+    color: #0a1417;
+    border-radius: 4px;
+    transition: transform 0.2s var(--ease-out-expo),
+      box-shadow 0.2s var(--ease-out-expo), background 0.2s ease;
+    box-shadow: 4px 4px 0 #000;
+  }
+  .btn-primary:hover {
+    background: #f4f083;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
+  }
+  .btn-primary:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 #000;
+  }
+
+  /* botão secundário — contorno sobre fundo escuro, sombra dura preta, 4px */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 border px-6 py-3 text-sm font-bold;
+    border-color: rgba(236, 233, 225, 0.3);
+    color: #ece9e1;
+    border-radius: 4px;
+    transition: transform 0.2s var(--ease-out-expo),
+      box-shadow 0.2s var(--ease-out-expo), background 0.2s ease,
+      border-color 0.2s ease;
+    box-shadow: 4px 4px 0 #000;
+  }
+  .btn-ghost:hover {
+    background: rgba(236, 233, 225, 0.05);
+    border-color: rgba(137, 214, 188, 0.6);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 #000;
+  }
+  .btn-ghost:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 #000;
+  }
+
+  /* inputs (form em caixa escura) */
+  .field-label {
+    @apply mb-1.5 block font-mono text-[11px] uppercase tracking-wider text-cloud-muted;
+  }
+  .field-input,
+  .field-select,
+  .field-textarea {
+    @apply w-full border px-4 py-3 text-sm transition-all;
+    border-radius: 4px;
+    background: rgba(10, 18, 21, 0.7);
+    border-color: rgba(99, 96, 236, 0.22);
+    color: #ece9e1;
+  }
+  .field-input::placeholder,
+  .field-textarea::placeholder {
+    color: #6e7679;
+  }
+  .field-input:focus,
+  .field-select:focus,
+  .field-textarea:focus {
+    outline: none;
+    border-color: #89d6bc;
+    box-shadow: 0 0 0 3px rgba(137, 214, 188, 0.2);
+  }
+  .field-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2354506E' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+  }
+  .field-select option {
+    background-color: #121c20;
+    color: #ece9e1;
+  }
+
+  .node-dot {
+    @apply animate-pulse-node;
+  }
+
+  /* pulso que viaja do box de pergunta até a IA assistente */
+  .travel-dot {
+    position: absolute;
+    z-index: 5;
+    width: 11px;
+    height: 11px;
+    border-radius: 9999px;
+    background: #89d6bc;
+    box-shadow: 0 0 14px 4px rgba(137, 214, 188, 0.7);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* cursor de digitação (typewriter) */
+  .type-caret {
+    display: inline-block;
+    margin-left: 1px;
+    color: #89d6bc;
+    font-weight: 400;
+    animation: caret-blink 1s step-end infinite;
+  }
+  @keyframes caret-blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+}
