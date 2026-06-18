@@ -623,11 +623,18 @@
 
   // ?perf=low — reduz a carga por frame (mobile): grade menor + sem 2x de DPR.
   // As linhas continuam vetoriais; só a amostragem e o nº de pixels caem.
+  // ?lineop=0.7 — atenua a opacidade do conjunto de linhas (mobile).
   try {
-    if (new URLSearchParams(location.search).get('perf') === 'low') {
+    var _qp = new URLSearchParams(location.search);
+    if (_qp.get('perf') === 'low') {
       CONFIG.gridCols = 200;
       CONFIG.maxDpr = 1;
       CONFIG.maxWidth = 1400;
+    }
+    var _lop = _qp.get('lineop');
+    if (_lop) {
+      var _cv = document.getElementById('mesh-bg');
+      if (_cv) _cv.style.opacity = _lop;
     }
   } catch (e) {}
 

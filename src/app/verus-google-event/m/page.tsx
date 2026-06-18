@@ -20,7 +20,7 @@ export default function MobilePage() {
     <>
       {/* fundo mesh SEM marcadores (markers=0) — só as curvas de contorno */}
       <iframe
-        src="/mesh-bg.html?v=8&markers=0&perf=low"
+        src="/mesh-bg.html?v=9&markers=0&perf=low&lineop=0.7"
         title=""
         aria-hidden="true"
         tabIndex={-1}
