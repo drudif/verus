@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Reveal from "@/components/Reveal";
 import Highlight from "@/components/Highlight";
 import HubSpotForm from "@/components/HubSpotForm";
+import MobileCta from "@/components/MobileCta";
 import { content } from "@/content";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export default function MobilePage() {
     <>
       {/* fundo mesh SEM marcadores (markers=0) — só as curvas de contorno */}
       <iframe
-        src="/mesh-bg.html?v=7&markers=0"
+        src="/mesh-bg.html?v=8&markers=0&perf=low"
         title=""
         aria-hidden="true"
         tabIndex={-1}
@@ -206,17 +207,8 @@ export default function MobilePage() {
         </footer>
       </main>
 
-      {/* CTA fixo no rodapé */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#04141a]/90 backdrop-blur-md">
-        <div className={`${COL} py-3`}>
-          <a href="#lead-form" className="btn-primary w-full">
-            {c.hero.ctaPrimario}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
-        </div>
-      </div>
+      {/* CTA fixo no rodapé — some na última seção (form/footer) */}
+      <MobileCta label={c.hero.ctaPrimario} />
     </>
   );
 }

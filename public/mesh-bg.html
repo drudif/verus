@@ -621,6 +621,16 @@
     };
   })();
 
+  // ?perf=low — reduz a carga por frame (mobile): grade menor + sem 2x de DPR.
+  // As linhas continuam vetoriais; só a amostragem e o nº de pixels caem.
+  try {
+    if (new URLSearchParams(location.search).get('perf') === 'low') {
+      CONFIG.gridCols = 200;
+      CONFIG.maxDpr = 1;
+      CONFIG.maxWidth = 1400;
+    }
+  } catch (e) {}
+
   window.MeshBackground.mount('#mesh-bg', CONFIG);
 </script>
 </body>
