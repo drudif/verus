@@ -70,9 +70,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0A0A12",
+  themeColor: "#04141A",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 function safeOrigin(url: string): string {

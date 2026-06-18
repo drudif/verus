@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import Reveal from "@/components/Reveal";
 import Highlight from "@/components/Highlight";
 import HubSpotForm from "@/components/HubSpotForm";
@@ -7,13 +7,6 @@ import { content } from "@/content";
 
 export const metadata: Metadata = {
   title: "Verus | Case Google Event | Convert",
-};
-
-// edge-to-edge: deixa o header cobrir a área do notch/status bar
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
 };
 
 const COL = "mx-auto w-full max-w-[460px] px-5";
@@ -50,7 +43,7 @@ export default function MobilePage() {
             <img
               src="/verus-logo.png"
               alt="Verus"
-              className="h-auto w-[72%] max-w-[300px]"
+              className="mt-4 h-auto w-full"
             />
             <h1 className="mt-6 text-balance font-display text-[1.7rem] font-bold leading-[1.12] tracking-[-0.02em]">
               <Highlight text={c.hero.titulo} mark={c.hero.destaque} />
