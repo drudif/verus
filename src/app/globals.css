@@ -239,3 +239,63 @@
     }
   }
 }
+
+/* ===== modo diurno na seção de cadastro (fundo cinza claro) =====
+   Fora das @layer p/ sobrepor as utilities do Tailwind dentro da seção. */
+.day-form {
+  background: #ededea;
+}
+/* textos da intro → dia */
+.day-form .eyebrow {
+  color: #2f6f5f;
+}
+.day-form .text-gradient {
+  color: #2f6f5f;
+}
+.day-form h2 {
+  color: #121c20;
+}
+.day-form .text-cloud {
+  color: #121c20;
+}
+.day-form .text-cloud-muted {
+  color: #4a5658;
+}
+.day-form .text-cloud-faint {
+  color: #6a7678;
+}
+/* card do formulário → claro (mantém a sombra dura preta do .glass) */
+.day-form .glass {
+  background: #ffffff;
+  border: 1px solid rgba(18, 28, 32, 0.12);
+  color: #121c20;
+}
+/* inputs → claros */
+.day-form .field-input,
+.day-form .field-select,
+.day-form .field-textarea {
+  background: #f6f3ec;
+  border-color: rgba(18, 28, 32, 0.18);
+  color: #121c20;
+}
+.day-form .field-input::placeholder,
+.day-form .field-textarea::placeholder {
+  color: #9a9a90;
+}
+.day-form .field-label {
+  color: #4a5658;
+}
+.day-form .field-input:focus,
+.day-form .field-select:focus,
+.day-form .field-textarea:focus {
+  border-color: #2f6f5f;
+  box-shadow: 0 0 0 3px rgba(47, 111, 95, 0.18);
+}
+.day-form .field-select option {
+  background-color: #ffffff;
+  color: #121c20;
+}
+/* ponto do eyebrow → escuro no day-form */
+.day-form .eyebrow > span {
+  background-color: #2f6f5f;
+}

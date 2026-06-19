@@ -32,8 +32,8 @@ export default function VerusGoogleEventPage() {
         <ArchitectureSection />
         <AudienceSection />
 
-        {/* Formulário — conversão */}
-        <section id="lead-form" className="scroll-mt-20 py-24 sm:py-32">
+        {/* Formulário — conversão (modo diurno, fundo cinza claro) */}
+        <section id="lead-form" className="day-form scroll-mt-20 py-24 sm:py-32">
           <div className="container-px">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
               <div className="lg:sticky lg:top-24 lg:self-start">

@@ -158,23 +158,25 @@ export default function MobilePage() {
           </div>
         </section>
 
-        {/* FORM */}
-        <section id="lead-form" className={`${COL} scroll-mt-16 pt-20`}>
-          <Reveal>
-            <span className="eyebrow">
-              <span className={EYE} />
-              {c.formulario.eyebrow}
-            </span>
-            <h2 className={H2}>
-              <Highlight text={c.formulario.titulo} mark={c.formulario.destaque} />
-            </h2>
-            <p className="mt-4 text-pretty text-[15px] leading-relaxed text-cloud-muted">
-              {c.formulario.paragrafo}
-            </p>
-          </Reveal>
-          <Reveal className="mt-7">
-            <HubSpotForm />
-          </Reveal>
+        {/* FORM — modo diurno, fundo cinza claro (faixa full-width) */}
+        <section id="lead-form" className="day-form scroll-mt-16 mt-20 py-16">
+          <div className={COL}>
+            <Reveal>
+              <span className="eyebrow">
+                <span className={EYE} />
+                {c.formulario.eyebrow}
+              </span>
+              <h2 className={H2}>
+                <Highlight text={c.formulario.titulo} mark={c.formulario.destaque} />
+              </h2>
+              <p className="mt-4 text-pretty text-[15px] leading-relaxed text-cloud-muted">
+                {c.formulario.paragrafo}
+              </p>
+            </Reveal>
+            <Reveal className="mt-7">
+              <HubSpotForm />
+            </Reveal>
+          </div>
         </section>
 
         {/* FOOTER */}
